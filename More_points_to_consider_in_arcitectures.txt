@@ -1,0 +1,369 @@
+# Search service
+------------------
+
+the Search Service should be treated as a read-optimized service, not the owner of core business transactions. It should help the dealer website and future marketplace to provide fast search, filtering, sorting, recommendations, and public catalogue discovery.
+
+- Role of search service 
+
+the Search Service should be treated as a read-optimized service, not the owner of core business transactions. It should help the dealer website and future marketplace to provide fast search, filtering, sorting, recommendations, and public catalogue discovery.
+
+Show all available vehicles for ABC Motors
+Show vehicles between ₹5L and ₹8L
+Show petrol automatic cars in Pune
+Show Maruti Swift listings for this dealer
+Show featured vehicles on dealer website
+Show marketplace vehicles across dealers in future
+
+
+- search service ownership 
+
+Show all available vehicles for ABC Motors
+Show vehicles between ₹5L and ₹8L
+Show petrol automatic cars in Pune
+Show Maruti Swift listings for this dealer
+Show featured vehicles on dealer website
+Show marketplace vehicles across dealers in future
+
+- Search data source strategy 
+
+1. PostgreSQL-Based Search
+2. Phase 2 — Dedicated Search Index
+	OpenSearch / Elasticsearch / Meilisearch / Typesense
+
+
+
+# Few More discussion points 
+
+Suggested microlith and corresponding ownership
+
+
+# Dealer Service 
+
+- Entities Owned 
+
+dealer
+dealer_branch
+dealer_user
+dealer_branding
+plan
+subscription
+audit_log partially
+
+- Primary responsibility 
+
+Who is the dealer?
+What is their configuration?
+Who can access dealer operations?
+What plan/subscription is active?
+What branding/domain/subdomain should be used?
+
+
+# Vehicle Service 
+
+- Entities Owned 
+
+vehicle
+vehicle_image
+vehicle_condition_report
+vehicle_price_history
+vehicle_sale_request
+finance_enquiry
+vehicle_master_manufacturer
+vehicle_master_model
+vehicle_master_variant
+
+- Primary responsibility
+
+What vehicles are listed?
+What images belong to each vehicle?
+What is the condition report?
+What vehicle master data is available?
+What seller requests came in?
+What finance enquiries came in?
+
+# Search service 
+
+- Entities owned
+
+Owns search/read models, not necessarily core transactional data.
+Initially it can read from PostgreSQL. Later it can own OpenSearch/Elasticsearch indexes.
+
+- Primary responsibility
+
+Fast public search
+Dealer-specific inventory search
+Marketplace search
+Filtering / sorting / faceted search
+Search suggestions
+
+
+# Design principle 
+
+1. Each service owns writes to its domain tables.
+2. Other services call APIs or consume events.
+
+# Cross-Cutting Services You Should Not Build as Separate Microlith Initially
+
+Auth Service
+Notification Service
+AI Service
+Billing Service
+Audit Service
+Media Service
+
+| Capability   | MVP Approach                                                |
+| ------------ | ----------------------------------------------------------- |
+| Auth         | Managed Auth / Spring Security JWT                          |
+| Notification | Module inside Dealer/Vehicle service or external provider   |
+| AI           | Utility module / async jobs                                 |
+| Billing      | Subscription tables first, payments later                   |
+| Audit        | Shared audit library/table                                  |
+| Media        | Vehicle Service handles metadata; object store stores files |
+
+
+
+# Transactions 
+
+- Transaction Rule for Your Microliths
+
+     Each service should follow this principle:
+     A service owns its transaction boundary. Other services are updated through events or async workflows.
+
+     Example: 
+     	Vehicle Service creates vehicle
+	Vehicle Service commits vehicle to database
+	Vehicle Service publishes VehicleCreated event
+	Search Service consumes event
+	Search Service updates search index
+
+     
+
+Remaining table 
+----------------------------
+
+- Outbox table 
+
+
+CREATE TABLE outbox_event (
+    event_id UUID PRIMARY KEY,
+    aggregate_type VARCHAR(100),
+    aggregate_id UUID,
+    event_type VARCHAR(100),
+    payload JSONB NOT NULL,
+    status VARCHAR(20) DEFAULT 'PENDING',
+    created_at TIMESTAMPTZ DEFAULT now(),
+    published_at TIMESTAMPTZ,
+    retry_count INT DEFAULT 0
+);
+- idempotency table 
+
+
+CREATE TABLE processed_event
+(
+    event_id UUID PRIMARY KEY,
+
+    event_type VARCHAR(100),
+
+    processed_at TIMESTAMP
+);
+
+CREATE TABLE vehicle_search_document
+(
+    vehicle_id UUID PRIMARY KEY,
+
+    dealer_id UUID,
+    dealer_name VARCHAR(200),
+    dealer_slug VARCHAR(100),
+    dealer_subdomain VARCHAR(100),
+
+    manufacturer_id UUID,
+    manufacturer_name VARCHAR(100),
+
+    model_id UUID,
+    model_name VARCHAR(100),
+
+    variant_id UUID,
+    variant_name VARCHAR(200),
+
+    manufacturing_year INT,
+    registration_year INT,
+
+    fuel_type VARCHAR(20),
+    transmission VARCHAR(20),
+
+    kilometers_driven INT,
+    ownership_count INT,
+
+    asking_price NUMERIC(12,2),
+
+    city VARCHAR(100),
+    state VARCHAR(100),
+
+    listing_status VARCHAR(20),
+
+    primary_image_url TEXT,
+
+    condition_score INT,
+
+    listing_quality_score INT,
+
+    searchable_text TEXT,
+
+    listed_at TIMESTAMP,
+    last_updated_at TIMESTAMP
+);
+
+
+
+CREATE TABLE search_facet_cache
+(
+    dealer_id UUID,
+
+    facet_name VARCHAR(100),
+
+    facet_value VARCHAR(100),
+
+    total_count INT,
+
+    last_refreshed TIMESTAMP
+);
+
+
+
+Later ( Not MVP ) 
+search_suggestion
+(
+    suggestion_id UUID,
+    keyword VARCHAR(200),
+
+    suggestion_type VARCHAR(50),
+
+    reference_id UUID,
+
+    popularity_score INT
+)
+
+
+CREATE TABLE dealer_search_document
+(
+    dealer_id UUID PRIMARY KEY,
+
+    dealer_name VARCHAR(200),
+
+    dealer_slug VARCHAR(100),
+
+    city VARCHAR(100),
+
+    state VARCHAR(100),
+
+    logo_url TEXT,
+
+    active_vehicle_count INT,
+
+    average_vehicle_price NUMERIC(12,2),
+
+    available_inventory_count INT
+);
+
+
+
+
+Recommanded documentation structure 
+
+
+used-car-platform-api-contracts/
+│
+├── README.md
+│
+├── common/
+│   ├── error-model.yaml
+│   ├── pagination.yaml
+│   ├── security-schemes.yaml
+│   └── common-schemas.yaml
+│
+├── dealer-service/
+│   ├── openapi.yaml
+│   ├── examples/
+│   └── README.md
+│
+├── vehicle-service/
+│   ├── openapi.yaml
+│   ├── examples/
+│   └── README.md
+│
+├── search-service/
+│   ├── openapi.yaml
+│   ├── examples/
+│   └── README.md
+│
+└── generated/
+    ├── postman/
+    ├── spring/
+    └── typescript/
+
+
+
+
+- recommended specification standard 
+
+OpenAPI 3.1
+YAML format
+RESTful naming
+JSON request/response
+JWT Bearer security
+Consistent error model
+Consistent pagination model
+
+- Recomanded tool chain - API design and documentation 
+
+| Purpose                | Tool                                   |
+| ---------------------- | -------------------------------------- |
+| API specification      | OpenAPI 3.1 YAML                       |
+| API visualization      | Swagger UI                             |
+| API editing            | Stoplight Studio / VS Code             |
+| Mock APIs              | Prism / WireMock                       |
+| API testing            | Postman / Newman                       |
+| Code generation        | OpenAPI Generator                      |
+| Contract validation    | Spectral                               |
+| Spring Boot generation | OpenAPI Generator Maven plugin         |
+| TypeScript client      | openapi-generator / openapi-typescript |
+
+
+- Documents to be maintained 
+
+1. API catalog by microlith
+2. OpenAPI YAML per microlith
+3. Common schema definitions
+4. Swagger UI published for dev/test/prod
+5. Postman collection generated from OpenAPI
+6. API design guidelines
+7. Error code catalog
+8. Event catalog for async integration
+9. Generated TypeScript client
+10. Generated Spring Boot interfaces
+
+
+- Documentation of events 
+
+How to ?
+list all the events 
+
+
+-  final recommendation 
+
+REST APIs:
+OpenAPI 3.1 YAML
+
+Async events:
+Event catalog now, AsyncAPI later
+
+UI documentation:
+Swagger UI
+
+Code generation:
+OpenAPI Generator
+
+Development acceleration:
+Claude code / GitHub Copilot + generated DTOs/interfaces + clear contracts
+
+

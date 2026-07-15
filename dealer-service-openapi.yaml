@@ -1,0 +1,1328 @@
+openapi: 3.1.0
+info:
+  title: Used Car Dealer Platform - Dealer Service API
+  version: 1.0.0
+  description: Dealer onboarding, resolution, branches, users, branding, plans, subscriptions, and entitlements.
+servers:
+- url: https://api.yourplatform.com
+  description: Production
+- url: http://localhost:8080
+  description: Local
+security:
+- bearerAuth: []
+paths:
+  /api/v1/dealers:
+    post:
+      tags:
+      - Dealers
+      summary: Register dealer
+      operationId: createDealer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DealerRequest'
+            examples:
+              default:
+                value:
+                  sample: payload
+  /api/v1/dealers/{dealerId}:
+    get:
+      tags:
+      - Dealers
+      summary: Get dealer
+      operationId: getDealer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+    put:
+      tags:
+      - Dealers
+      summary: Update dealer
+      operationId: updateDealer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DealerRequest'
+            examples:
+              default:
+                value:
+                  sample: payload
+  /api/v1/dealers/{dealerId}/status:
+    patch:
+      tags:
+      - Dealers
+      summary: Update dealer status
+      operationId: updateDealerStatus
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DealerRequest'
+            examples:
+              default:
+                value:
+                  sample: payload
+  /api/v1/dealers/{dealerId}/onboarding-status:
+    patch:
+      tags:
+      - Dealers
+      summary: Update onboarding status
+      operationId: updateDealerOnboardingStatus
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DealerRequest'
+            examples:
+              default:
+                value:
+                  sample: payload
+  /api/v1/dealers/resolve:
+    get:
+      tags:
+      - Dealer Resolution
+      summary: Resolve dealer by subdomain
+      operationId: resolveDealerBySubdomain
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - name: subdomain
+        in: query
+        required: true
+        schema:
+          type: string
+      security: []
+  /api/v1/dealers/resolve-slug/{slug}:
+    get:
+      tags:
+      - Dealer Resolution
+      summary: Resolve dealer by slug
+      operationId: resolveDealerBySlug
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+      security: []
+  /api/v1/dealers/resolve-domain:
+    get:
+      tags:
+      - Dealer Resolution
+      summary: Resolve dealer by custom domain
+      operationId: resolveDealerByCustomDomain
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - name: host
+        in: query
+        required: true
+        schema:
+          type: string
+      security: []
+  /api/v1/dealers/{dealerId}/branches:
+    post:
+      tags:
+      - Dealer Branches
+      summary: Create branch
+      operationId: createDealerBranch
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BranchRequest'
+            examples:
+              default:
+                value:
+                  sample: payload
+    get:
+      tags:
+      - Dealer Branches
+      summary: List branches
+      operationId: listDealerBranches
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      - $ref: '#/components/parameters/PageQuery'
+      - $ref: '#/components/parameters/SizeQuery'
+  /api/v1/dealers/{dealerId}/branches/{branchId}:
+    get:
+      tags:
+      - Dealer Branches
+      summary: Get branch
+      operationId: getDealerBranch
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      - $ref: '#/components/parameters/BranchIdPath'
+    put:
+      tags:
+      - Dealer Branches
+      summary: Update branch
+      operationId: updateDealerBranch
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      - $ref: '#/components/parameters/BranchIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BranchRequest'
+            examples:
+              default:
+                value:
+                  sample: payload
+    delete:
+      tags:
+      - Dealer Branches
+      summary: Delete branch
+      operationId: deleteDealerBranch
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      - $ref: '#/components/parameters/BranchIdPath'
+  /api/v1/dealers/{dealerId}/branches/{branchId}/primary:
+    patch:
+      tags:
+      - Dealer Branches
+      summary: Set primary branch
+      operationId: setPrimaryBranch
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      - $ref: '#/components/parameters/BranchIdPath'
+  /api/v1/dealers/{dealerId}/users:
+    post:
+      tags:
+      - Dealer Users
+      summary: Create dealer user
+      operationId: createDealerUser
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+            examples:
+              default:
+                value:
+                  sample: payload
+    get:
+      tags:
+      - Dealer Users
+      summary: List dealer users
+      operationId: listDealerUsers
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      - $ref: '#/components/parameters/PageQuery'
+      - $ref: '#/components/parameters/SizeQuery'
+  /api/v1/dealers/{dealerId}/users/{userId}:
+    get:
+      tags:
+      - Dealer Users
+      summary: Get dealer user
+      operationId: getDealerUser
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      - $ref: '#/components/parameters/UserIdPath'
+    put:
+      tags:
+      - Dealer Users
+      summary: Update dealer user
+      operationId: updateDealerUser
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      - $ref: '#/components/parameters/UserIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+            examples:
+              default:
+                value:
+                  sample: payload
+    delete:
+      tags:
+      - Dealer Users
+      summary: Delete dealer user
+      operationId: deleteDealerUser
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      - $ref: '#/components/parameters/UserIdPath'
+  /api/v1/dealers/{dealerId}/users/{userId}/status:
+    patch:
+      tags:
+      - Dealer Users
+      summary: Update user status
+      operationId: updateDealerUserStatus
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      - $ref: '#/components/parameters/UserIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+            examples:
+              default:
+                value:
+                  sample: payload
+  /api/v1/dealers/{dealerId}/users/{userId}/role:
+    patch:
+      tags:
+      - Dealer Users
+      summary: Change user role
+      operationId: changeDealerUserRole
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      - $ref: '#/components/parameters/UserIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+            examples:
+              default:
+                value:
+                  sample: payload
+  /api/v1/dealers/{dealerId}/branding:
+    get:
+      tags:
+      - Dealer Branding
+      summary: Get branding
+      operationId: getDealerBranding
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+    put:
+      tags:
+      - Dealer Branding
+      summary: Update branding
+      operationId: updateDealerBranding
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrandingRequest'
+            examples:
+              default:
+                value:
+                  sample: payload
+  /api/v1/dealers/{dealerId}/branding/logo:
+    patch:
+      tags:
+      - Dealer Branding
+      summary: Update logo
+      operationId: updateDealerLogo
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrandingRequest'
+            examples:
+              default:
+                value:
+                  sample: payload
+  /api/v1/plans:
+    get:
+      tags:
+      - Plans
+      summary: List plans
+      operationId: listPlans
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/PageQuery'
+      - $ref: '#/components/parameters/SizeQuery'
+      security: []
+    post:
+      tags:
+      - Plans
+      summary: Create plan
+      operationId: createPlan
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanRequest'
+            examples:
+              default:
+                value:
+                  sample: payload
+  /api/v1/plans/{planId}:
+    get:
+      tags:
+      - Plans
+      summary: Get plan
+      operationId: getPlan
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/PlanIdPath'
+      security: []
+    put:
+      tags:
+      - Plans
+      summary: Update plan
+      operationId: updatePlan
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/PlanIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanRequest'
+            examples:
+              default:
+                value:
+                  sample: payload
+  /api/v1/dealers/{dealerId}/subscriptions:
+    post:
+      tags:
+      - Subscriptions
+      summary: Create subscription
+      operationId: createDealerSubscription
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionRequest'
+            examples:
+              default:
+                value:
+                  sample: payload
+  /api/v1/dealers/{dealerId}/subscriptions/current:
+    get:
+      tags:
+      - Subscriptions
+      summary: Get current subscription
+      operationId: getCurrentDealerSubscription
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+  /api/v1/dealers/{dealerId}/subscriptions/history:
+    get:
+      tags:
+      - Subscriptions
+      summary: Get subscription history
+      operationId: getDealerSubscriptionHistory
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      - $ref: '#/components/parameters/PageQuery'
+      - $ref: '#/components/parameters/SizeQuery'
+  /api/v1/dealers/{dealerId}/subscriptions/{subscriptionId}/cancel:
+    patch:
+      tags:
+      - Subscriptions
+      summary: Cancel subscription
+      operationId: cancelDealerSubscription
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      - $ref: '#/components/parameters/SubscriptionIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionRequest'
+            examples:
+              default:
+                value:
+                  sample: payload
+  /api/v1/dealers/{dealerId}/subscriptions/{subscriptionId}/renew:
+    patch:
+      tags:
+      - Subscriptions
+      summary: Renew subscription
+      operationId: renewDealerSubscription
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+      - $ref: '#/components/parameters/SubscriptionIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionRequest'
+            examples:
+              default:
+                value:
+                  sample: payload
+  /api/v1/dealers/{dealerId}/entitlements:
+    get:
+      tags:
+      - Entitlements
+      summary: Get dealer entitlements
+      operationId: getDealerEntitlements
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - $ref: '#/components/parameters/DealerIdPath'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    DealerIdPath:
+      name: dealerId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    BranchIdPath:
+      name: branchId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    UserIdPath:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PlanIdPath:
+      name: planId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    SubscriptionIdPath:
+      name: subscriptionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    VehicleIdPath:
+      name: vehicleId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ImageIdPath:
+      name: imageId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ManufacturerIdPath:
+      name: manufacturerId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ModelIdPath:
+      name: modelId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    VariantIdPath:
+      name: variantId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    LeadIdPath:
+      name: leadId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    SaleRequestIdPath:
+      name: saleRequestId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    FinanceEnquiryIdPath:
+      name: financeEnquiryId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PageQuery:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 0
+    SizeQuery:
+      name: size
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 20
+    QueryText:
+      name: q
+      in: query
+      required: false
+      schema:
+        type: string
+    LimitQuery:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 8
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        traceId:
+          type: string
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
+    GenericResponse:
+      type: object
+      additionalProperties: true
+      example:
+        id: 018f78a0-31b2-7d4a-bd00-09fe6fbb0001
+        status: success
+    PageResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+        page:
+          type: object
+    DealerRequest:
+      type: object
+      properties:
+        dealerName:
+          type: string
+        dealerSlug:
+          type: string
+        businessEmail:
+          type: string
+          format: email
+    BranchRequest:
+      type: object
+      properties:
+        branchName:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        isPrimary:
+          type: boolean
+    UserRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum:
+          - owner
+          - admin
+          - manager
+          - sales
+          - support
+    BrandingRequest:
+      type: object
+      properties:
+        logoUrl:
+          type: string
+        primaryColor:
+          type: string
+        customDomain:
+          type: string
+        subdomain:
+          type: string
+    PlanRequest:
+      type: object
+      properties:
+        planName:
+          type: string
+        planCode:
+          type: string
+        monthlyPrice:
+          type: number
+    SubscriptionRequest:
+      type: object
+      properties:
+        planId:
+          type: string
+          format: uuid
+        billingCycle:
+          type: string
+    VehicleRequest:
+      type: object
+      properties:
+        variantId:
+          type: string
+          format: uuid
+        registrationNumber:
+          type: string
+        askingPrice:
+          type: number
+        kilometersDriven:
+          type: integer
+    ImageRequest:
+      type: object
+      properties:
+        imageUrl:
+          type: string
+        imageType:
+          type: string
+        isPrimary:
+          type: boolean
+    ConditionReportRequest:
+      type: object
+      properties:
+        exteriorCondition:
+          type: string
+        interiorCondition:
+          type: string
+        conditionScore:
+          type: integer
+    LeadRequest:
+      type: object
+      properties:
+        vehicleId:
+          type: string
+          format: uuid
+        customer:
+          type: object
+        leadType:
+          type: string
+    SaleRequest:
+      type: object
+      properties:
+        dealerId:
+          type: string
+          format: uuid
+        customer:
+          type: object
+        manufacturerName:
+          type: string
+        modelName:
+          type: string
+    FinanceRequest:
+      type: object
+      properties:
+        vehicleId:
+          type: string
+          format: uuid
+        customer:
+          type: object
+        requestedLoanAmount:
+          type: number
+    SearchResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+        page:
+          type: object
+        facets:
+          type: object
+    ReindexRequest:
+      type: object
+      properties:
+        indexName:
+          type: string
+        reason:
+          type: string
+tags:
+- name: Dealers
+- name: Dealer Resolution
+- name: Dealer Branches
+- name: Dealer Users
+- name: Dealer Branding
+- name: Plans
+- name: Subscriptions
+- name: Entitlements

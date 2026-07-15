@@ -1,0 +1,234 @@
+Used Car Dealer SaaS Platform - Claude Context Summary
+Date: 2026-07-10 / 2026-07-11 IST discussion context
+
+PROJECT VISION
+The project is a multi-tenant SaaS platform for used car dealers. The platform provides dealer onboarding, dealer-branded digital storefronts, vehicle listing/search, image upload, vehicle master data, buyer interest/lead capture, seller vehicle sale requests, vehicle details/condition reports, and finance enquiries. The MVP should be startup-friendly, cost-conscious, extensible, and suitable for AI-assisted development.
+
+HIGH-LEVEL BUSINESS CAPABILITIES
+1. Dealer onboarding and subscription-based SaaS tenant setup.
+2. Dealer-specific branded website, e.g. abc-motors.yourplatform.com.
+3. Vehicle listing and inventory management.
+4. Public vehicle search and filtering.
+5. Buyer interest / lead capture.
+6. Seller vehicle sale request submission.
+7. Vehicle image upload and cloud object storage.
+8. Vehicle master data: manufacturer -> model -> variant.
+9. Vehicle condition report and listing quality score.
+10. Finance enquiry capture.
+11. AI-assisted vehicle descriptions, condition summaries, and listing scores.
+
+ARCHITECTURE DECISION
+Use three microliths for MVP:
+1. Dealer Service
+2. Vehicle Service
+3. Search Service
+
+This is preferred over a large monolith or too many microservices. The services may initially share one PostgreSQL instance but must maintain logical ownership boundaries.
+
+SERVICE OWNERSHIP
+Dealer Service owns:
+- dealer
+- dealer_branch
+- dealer_user
+- dealer_branding
+- plan
+- subscription
+- entitlement APIs
+- dealer resolution by subdomain, slug, and custom domain
+
+Vehicle Service owns:
+- vehicle_master_manufacturer
+- vehicle_master_model
+- vehicle_master_variant
+- vehicle
+- vehicle_image
+- vehicle_condition_report
+- vehicle_price_history
+- customer
+- lead
+- vehicle_sale_request
+- finance_enquiry
+- AI-assisted vehicle endpoints
+- vehicle-related outbox events
+
+Search Service owns:
+- vehicle_search_document
+- dealer_search_document
+- processed_event
+- search_reindex_job
+- search / facets / suggestions APIs
+- idempotent event consumers
+
+MULTI-TENANCY RULES
+- MVP uses shared database/shared schema with dealer_id on tenant-owned tables.
+- JWT should include dealerId, userId, role.
+- Backend extracts dealerId into TenantContext.
+- Every tenant-owned query must filter by dealerId from TenantContext unless the caller is PLATFORM_ADMIN.
+- Public dealer website requests resolve dealer context using subdomain, slug, or custom domain.
+- Dealer A must never see Dealer B data.
+- PostgreSQL Row-Level Security can be added later for defense-in-depth.
+
+URL ROUTING DECISION
+The preferred MVP dealer website pattern is subdomain-based:
+- abc-motors.yourplatform.com
+This supports dealer branding and future custom domains.
+A path-based marketplace can also exist later:
+- yourplatform.com/dealers/abc-motors
+- yourplatform.com/search
+Recommended hybrid strategy:
+- Dealer websites use subdomains.
+- Platform marketplace uses root/path-based URLs.
+- Premium dealers can map custom domains later.
+
+DATABASE DESIGN NOTES
+- Use PostgreSQL.
+- Use cloud object storage for vehicle images and dealer logos.
+- Store image metadata in PostgreSQL, not binary blobs.
+- Use UUIDs for primary keys.
+- Use timestamptz for timestamps.
+- Use numeric(12,2) for money.
+- Add FK indexes explicitly.
+- Add indexes for dealer_id + status, search filters, price, year, kilometers driven, follow-up dates, renewal dates.
+- Consider soft delete before production.
+- Consider jsonb for flexible vehicle attributes later.
+- Search Service should use denormalized read models for search.
+
+OUTBOX PATTERN
+Use local transaction + outbox event + asynchronous event publisher.
+Never use distributed transactions or two-phase commit.
+Business service flow:
+1. Begin local DB transaction.
+2. Write business state change.
+3. Insert outbox_event row in same transaction.
+4. Commit.
+5. Outbox Publisher reads pending events.
+6. Publishes to Pub/Sub/SNS/SQS.
+7. Marks event as published.
+8. Consumers process events idempotently.
+
+GCP reference implementation:
+- Cloud Run services for Dealer, Vehicle, Search.
+- Cloud SQL PostgreSQL.
+- Cloud Storage for images.
+- Pub/Sub for events.
+- Cloud Run Job or worker for Outbox Publisher.
+- Cloud Scheduler can trigger publisher.
+- Cloud Logging and Monitoring for observability.
+
+EVENTS
+Dealer Service events:
+- DealerCreated
+- DealerUpdated
+- DealerActivated
+- DealerSuspended
+- BrandingUpdated
+- SubscriptionActivated
+- SubscriptionExpired
+- PlanUpdated
+
+Vehicle Service events:
+- VehicleCreated
+- VehicleUpdated
+- VehiclePublished
+- VehicleStatusChanged
+- VehicleSold
+- VehicleDeactivated
+- VehiclePriceChanged
+- VehicleImageAdded
+- VehicleImageRemoved
+- ConditionReportUpdated
+- LeadCreated
+- SaleRequestCreated
+- FinanceEnquiryCreated
+
+Search Service consumes:
+- DealerCreated
+- DealerUpdated
+- DealerSuspended
+- BrandingUpdated
+- SubscriptionExpired
+- VehicleCreated
+- VehicleUpdated
+- VehiclePublished
+- VehicleStatusChanged
+- VehicleSold
+- VehicleDeactivated
+- VehiclePriceChanged
+- VehicleImageAdded
+- VehicleImageRemoved
+- ConditionReportUpdated
+
+E2E ARCHITECTURE FLOW
+Public dealer website:
+Buyer -> Dealer Website -> CDN/WAF/API Gateway -> Tenant Resolver -> Dealer Service -> Search Service -> Search Read Model.
+
+Dealer creates vehicle:
+Dealer Portal -> Vehicle Service -> Dealer Service entitlement validation -> Vehicle DB insert/update -> vehicle_outbox_event insert -> Outbox Publisher -> Pub/Sub -> Search Consumer -> vehicle_search_document upsert.
+
+Buyer lead:
+Dealer Website -> Vehicle Service -> customer/lead insert -> LeadCreated outbox event -> Pub/Sub -> Notification/Analytics consumers.
+
+Vehicle publish:
+Vehicle Service validates tenant ownership, required fields, images, and subscription/entitlements. Vehicle status changes to available. VehiclePublished event is inserted into outbox. Search Service eventually indexes the vehicle.
+
+OPENAPI CONTRACTS CREATED
+1. dealer-service-openapi-with-examples.yaml
+   Covers dealer onboarding/profile, dealer resolution, branches, users, branding, plans, subscriptions, entitlements, JWT security, pagination, error model, examples.
+
+2. vehicle-service-openapi.yaml
+   Covers vehicle master data, vehicle listing lifecycle, image upload URL and metadata, condition reports, price changes, leads, sale requests, finance enquiries, AI description, listing score, condition summary.
+
+3. search-service-openapi.yaml
+   Covers dealer vehicle search, public vehicle detail, featured vehicles, similar vehicles, facets, suggestions, marketplace vehicle search, dealer search, global suggestions, reindex APIs, index health.
+
+DEVELOPMENT WORKFLOW
+Use OpenAPI-first development:
+1. Finalize each OpenAPI YAML contract.
+2. Generate Spring Boot interfaces/DTOs/enums from OpenAPI.
+3. Generate TypeScript clients for React/Next.js.
+4. Implement service logic behind generated interfaces.
+5. Generate tests from OpenAPI examples.
+6. Use Swagger UI/Postman for API testing.
+7. Use Spectral for OpenAPI linting.
+8. Use GitHub Copilot and Agent Mode for feature slices.
+
+GITHUB COPILOT USAGE
+Create .github/copilot-instructions.md with architecture rules:
+- Dealer Service owns dealer-related entities.
+- Vehicle Service owns vehicle-related transactional entities.
+- Search Service owns read models only.
+- Every tenant-owned query must filter by dealerId.
+- Use Outbox Pattern for events.
+- Consumers must be idempotent.
+- Avoid distributed transactions.
+- Follow OpenAPI contracts exactly.
+
+Use Copilot for:
+- Spring Boot controllers and delegates.
+- JPA entities and repositories.
+- MapStruct mappers.
+- Flyway migrations.
+- TenantContext and JWT filters.
+- Outbox publisher and event consumers.
+- Unit/integration tests.
+- React hooks and pages from TypeScript clients.
+- PR summaries and code reviews.
+
+IMPORTANT IMPLEMENTATION GUARDRAILS
+1. Never trust dealerId from UI payload for authenticated dealer operations; use dealerId from JWT/TenantContext.
+2. Public APIs that accept dealerId must only expose public/available listings and public dealer information.
+3. Search Service should only expose available/reserved vehicles as appropriate, not draft/inactive/internal data.
+4. Do not directly call Search Service from Vehicle Service to index data; publish events via outbox.
+5. Do not store images in PostgreSQL; store image object keys/URLs and metadata only.
+6. Implement idempotency in all event consumers.
+7. Use audit logs for critical changes.
+8. Review all generated code for tenant isolation and PII handling.
+
+RECOMMENDED NEXT STEPS
+1. Review all three OpenAPI contracts.
+2. Create repository structure: contracts, dealer-service, vehicle-service, search-service, frontend, docs.
+3. Add .github/copilot-instructions.md.
+4. Configure OpenAPI Generator for Spring Boot and TypeScript clients.
+5. Implement Dealer Service first, then Vehicle Service, then Search Service.
+6. Add Outbox and Pub/Sub integration before relying on search indexing.
+7. Add CI checks: OpenAPI lint, code generation, compile, tests.

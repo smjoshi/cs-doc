@@ -1,0 +1,280 @@
+## E2E Architecture Summary
+
+This platform is a multi-tenant SaaS platform for used-car dealers.
+
+Services:
+- Dealer Service owns dealer, branch, user, branding, plan, subscription, entitlement APIs.
+- Vehicle Service owns vehicle inventory, image metadata, condition reports, price history, leads, seller sale requests, finance enquiries, and AI-assisted vehicle content.
+- Search Service owns denormalized read models and search APIs.
+
+Request Flow:
+- Frontend calls API Gateway/BFF.
+- JWT contains dealerId for authenticated dealer users.
+- Public dealer website resolves dealer using subdomain, slug, or custom domain.
+- Vehicle Service calls Dealer Service synchronously only for entitlement checks.
+- Search Service is read-optimized and eventually consistent.
+
+Async Flow:
+- Dealer Service and Vehicle Service write outbox_event rows in the same DB transaction as business changes.
+- Outbox Publisher publishes events to Pub/Sub.
+- Search Service consumes events and updates vehicle_search_document and dealer_search_document.
+- Consumers must use processed_event for idempotency.
+- Avoid distributed transactions.
+
+Tenant Rule:
+Every tenant-owned write/read must be scoped by dealerId from TenantContext, except platform-admin flows.
+
+
+
+
+# Event-Driven Architecture Context
+
+The platform uses local transactions plus the Outbox Pattern.
+
+Rules:
+1. Business services do not directly call Search Service for search indexing.
+2. Vehicle Service writes vehicle changes and outbox events in the same DB transaction.
+3. Dealer Service writes dealer/subscription/branding changes and outbox events in the same DB transaction.
+4. Outbox Publisher publishes pending events to Pub/Sub.
+5. Search Service consumes events and updates denormalized search read models.
+6. Consumers must be idempotent.
+7. Pub/Sub delivery is treated as at-least-once.
+8. Search consistency is eventual, not transactional.
+9. Do not use distributed transactions or two-phase commit.
+10. Synchronous service calls are allowed only for immediate validation, such as Dealer Entitlements.
+
+
+# Notes for GitHub Copilot / AI Context
+
+
+1. Dealer Service owns dealer, branch, user, branding, plan, subscription, entitlement APIs.
+
+2. Vehicle Service owns vehicle inventory, image metadata, condition reports, price history, leads, seller sale requests, finance enquiries, and vehicle master data.
+
+3. Search Service owns denormalized search read models and does not directly own transactional vehicle/dealer data.
+
+4. Vehicle Service may synchronously call Dealer Service only for immediate validation such as:
+   - dealer active
+   - subscription active
+   - listing limit available
+   - feature entitlement enabled
+
+5. Search updates are asynchronous.
+   Vehicle Service must not directly call Search Service for indexing.
+
+6. Dealer Service and Vehicle Service write outbox events in the same database transaction as the business change.
+
+7. Outbox Publisher reads pending events and publishes them to Pub/Sub.
+
+8. Search Service consumes events and performs idempotent upserts into:
+   - vehicle_search_document
+   - dealer_search_document
+
+9. Pub/Sub delivery must be treated as at-least-once.
+
+10. Every consumer must maintain processed_event or equivalent idempotency logic.
+
+11. Avoid distributed transactions and two-phase commit.
+
+12. Tenant isolation must be enforced using dealerId from JWT/TenantContext for authenticated dealer operations.
+
+13. Public dealer website requests resolve dealer context through:
+   - subdomain
+   - slug
+   - custom domain
+
+# high level diagram 
+
+Vehicle Service (Cloud Run)
+        |
+        v
+ Cloud SQL PostgreSQL
+    ├── vehicle
+    └── outbox_event
+        |
+        v
+ Outbox Publisher
+ (Cloud Run Job)
+        |
+        v
+     Pub/Sub
+        |
+        +------------+
+        |            |
+        v            v
+ Search Service   Notification Service
+ (Cloud Run)      (Future)
+
+
+# outbox event table structure
+
+CREATE TABLE outbox_event (
+    event_id UUID PRIMARY KEY,
+
+    aggregate_type VARCHAR(100),
+    aggregate_id UUID,
+
+    event_type VARCHAR(100),
+
+    payload JSONB NOT NULL,
+
+    status VARCHAR(20) DEFAULT 'PENDING',
+
+    created_at TIMESTAMPTZ DEFAULT now(),
+
+    published_at TIMESTAMPTZ,
+
+    retry_count INT DEFAULT 0
+);
+
+
+# Event structure 
+{
+  "eventId": "E1",
+  "eventType": "VehiclePublished",
+  "aggregateType": "Vehicle",
+  "aggregateId": "V100",
+
+  "occurredAt": "2026-07-10T10:00:00Z",
+
+  "payload": {
+    "vehicleId": "V100",
+    "dealerId": "D100",
+    "listingStatus": "AVAILABLE"
+  }
+}
+
+# Vehicle events 
+
+
+VehicleCreated
+VehiclePublished
+VehicleUpdated
+VehicleSold
+VehiclePriceChanged
+VehicleDeleted
+
+# dealer-events
+
+
+DealerCreated
+DealerUpdated
+DealerSuspended
+SubscriptionActivated
+SubscriptionExpired
+
+
+# GCP service mapping 	
+
+| Requirement      | GCP Service                |
+| ---------------- | -------------------------- |
+| Transaction DB   | Cloud SQL PostgreSQL       |
+| Outbox Storage   | Outbox table in Cloud SQL  |
+| Event Broker     | Pub/Sub                    |
+| Publisher Worker | Cloud Run Job              |
+| Search Service   | Cloud Run                  |
+| Vehicle Service  | Cloud Run                  |
+| Dealer Service   | Cloud Run                  |
+| Scheduling       | Cloud Scheduler            |
+| Object Storage   | Cloud Storage              |
+| Observability    | Cloud Logging + Monitoring |
+
+
+
+# search service approach
+
+primary search table - vehicle_search_document
+
+CREATE TABLE vehicle_search_document
+(
+    vehicle_id UUID PRIMARY KEY,
+
+    dealer_id UUID,
+    dealer_name VARCHAR(200),
+    dealer_slug VARCHAR(100),
+    dealer_subdomain VARCHAR(100),
+
+    manufacturer_id UUID,
+    manufacturer_name VARCHAR(100),
+
+    model_id UUID,
+    model_name VARCHAR(100),
+
+    variant_id UUID,
+    variant_name VARCHAR(200),
+
+    manufacturing_year INT,
+    registration_year INT,
+
+    fuel_type VARCHAR(20),
+    transmission VARCHAR(20),
+
+    kilometers_driven INT,
+    ownership_count INT,
+
+    asking_price NUMERIC(12,2),
+
+    city VARCHAR(100),
+    state VARCHAR(100),
+
+    listing_status VARCHAR(20),
+
+    primary_image_url TEXT,
+
+    condition_score INT,
+
+    listing_quality_score INT,
+
+    searchable_text TEXT,
+
+    listed_at TIMESTAMP,
+    last_updated_at TIMESTAMP
+);
+
+
+# search facet table 
+
+CREATE TABLE search_facet_cache
+(
+    dealer_id UUID,
+
+    facet_name VARCHAR(100),
+
+    facet_value VARCHAR(100),
+
+    total_count INT,
+
+    last_refreshed TIMESTAMP
+);
+
+# Search Suggestion Table
+
+search_suggestion
+(
+    suggestion_id UUID,
+    keyword VARCHAR(200),
+
+    suggestion_type VARCHAR(50),
+
+    reference_id UUID,
+
+    popularity_score INT
+)
+
+#Event Processing Table processed_event for idempotency 
+
+CREATE TABLE processed_event
+(
+    event_id UUID PRIMARY KEY,
+
+    event_type VARCHAR(100),
+
+    processed_at TIMESTAMP
+);
+
+	
+
+
+
+
+
